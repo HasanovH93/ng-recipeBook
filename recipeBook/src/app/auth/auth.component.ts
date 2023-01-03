@@ -1,6 +1,7 @@
 import { Component } from "@angular/core";
 import { NgForm } from "@angular/forms";
-import { AuthService } from "./auth.service";
+import { Observable } from "rxjs";
+import { AuthResponseData, AuthService } from "./auth.service";
 
 @Component({
   selector: "app-auth",
@@ -9,7 +10,7 @@ import { AuthService } from "./auth.service";
 export class AuthComponent {
   isLogin = true;
   isLoading = false;
-  error: string = null
+  error: string = null;
 
   constructor(private authService: AuthService) {}
   onSwitchMode() {
@@ -23,25 +24,24 @@ export class AuthComponent {
     }
     const email = form.value.email;
     const password = form.value.password;
-    this.isLoading = true
-    if (this.isLogin) {
-    } else {
-      this.authService
-        .signup(email, password)
-        .subscribe(
-          resData => {
-            console.log(resData);
-            this.isLoading = false
-          },
-          errorRes => {
-            switch(errorRes.error.error.message) {
-              case 'EMAIL_EXIST': this.error = "Email already taken"
-            }
-            this.isLoading = false
-          }
-        );
-    }
 
+    let authObs: Observable<AuthResponseData>;
+    this.isLoading = true;
+    if (this.isLogin) {
+      authObs = this.authService.login(email, password);
+    } else {
+      authObs = this.authService.signup(email, password);
+    }
+    authObs.subscribe(
+      (resData) => {
+        console.log(resData);
+        this.isLoading = false;
+      },
+      (errorMsg) => {
+        this.error = errorMsg;
+        this.isLoading = false;
+      }
+    );
     form.reset();
   }
 }
